@@ -1,0 +1,179 @@
+Configuration Management
+Security and Compliance
+Application Deployment
+Orchestration
+Continuous Delivery
+Provisioning
+----------------------------------------------
+pip install ansible
+sudo yum install ansible
+sudo apt-get install ansible
+----------------------------------------------
+Playbooks are written in YAML. (Tasks: In order, From Top to bottom)
+----------------------------------------------
+Inventory is collection of hosts
+Inventory
+[web]
+webserver1.example.com
+webserver2.example.com
+
+[db]
+databaseserver1.example.com
+-------------------------------------------------
+ansible all -m ping
+ansible web -m command -a "uptime"
+ansible localhost -m setup
+-------------------------------------------------
+ansible all -i hosts -u vagrant -m ping (Passes a hosts file with username vagrant and for module ping)
+ansible all -i hosts -u vagrant -m setup (Passed module setup)
+ansible webservers -i hosts -u vagrant -m yum -a "name=httpd state=present" -b(Passed YUM module to webservers group only with arguments, -b gives permission to user vagrant to install httpd)
+ansible webservers -i hosts -u vagrant -m yum -a "name=httpd state=absent" -b (Removal of HTTPD)
+-------------------------------------------------
+Inventory hosts_vars, Inventory group_vars
+file, yum, service, template
+-------------------------------------------------
+tasks:
+  -name: add cache dir
+   file:
+     path: /opt/cache
+	 state: directory
+   -name: install nginx
+    yum:
+	  name: nginx
+	  state: latest
+	-name: restart nginx
+     service:
+         name: nginx
+         state: restarted
+-------------------------------------------------------
+Handler task going to run only once no matter how many time is it called.
+handlers:
+  -name: restart nginx
+   service:
+      name:nginx
+	  starte: restarted
+-----------------------------------------------------------
+Play is ordered form of tasks.
+-name:install and start apache
+ hosts: web
+ vars:
+    http_port: 80
+	mac_clients: 200
+ remote_user: root
+---------------------------------------------------------
+---
+-name: install and start apache
+ hosts: webservers
+ remote_user: vagrant
+ become:yes
+ 
+ tasks:
+ - name:install epel repo
+   yum: name=epel-release state=present
+   
+ - name: install python bindingd for SELinux
+   yum: name={{item}} state=present
+   with_items:
+   -libselinux-python
+   -libsemanage-python
+   
+ - name: test to see if SELinux is running
+   command: getenforce
+   register: sestatus
+   changed_when: false
+   
+ - name: install apache
+   yum: name= httpd state=present
+ 
+ -name: start apache
+  service: name=httpd state= started enabled=yes
+
+ansible-playbook -i hosts site.yml  (To run above playbook)
+-----------------------------------------------------------------
+site.yml
+ -hosts: web
+  roles:
+      - common
+	  - webservers
+--------------------------------------------------
+mkdir roles
+cd roles/
+ansible-galaxy init --help
+ansible-galaxy init common
+ansible-galaxy init apache
+ls apache/
+ls common/
+ls common/tasks/
+main.yml
+---------------------------------------------------
+#Task File for Common Role.  #Breaking Playbook in roles.
+ - name: install python bindingd for SELinux
+   yum: name={{item}} state=present
+   with_items:
+   -libselinux-python
+   -libsemanage-python
+   
+ - name: test to see if SELinux is running
+   command: getenforce
+   register: sestatus
+   changed_when: false
+  
+-include: selinux.yml
+-include: ntp.yml
+-------------------------------------------------------
+ansible-galaxy init web
+-name: install git
+ yum: name=git state=git
+ 
+-name:checkout lameapp
+ git: repo=https://github.com/lameapp.git version="{{lameapp_version}}"
+ 
+-name:set permission to the app
+ file: name=/var/www/lameapp/lame.py mode=0755
+ 
+-name: add apache config file
+ copy: src=lameapp.conf dest={{sites_available}}
+ notify: restart apache
+ 
+-name: link app config
+ file: src="{{sites_available}}}}/lameapp.conf" dest={{sites_enable}}
+ 
+-meta: flush_handlers
+
+-name:check for proper response
+ url:
+   url: http://localhost/lame
+   return_content: yes
+  register: result
+  untill: '"Hello Moon" in result.content'
+-------------------------------------------------------------------------
+-name: apply the common configuration to all hosts
+ hosts: all
+ remote_user: vagrant
+ become: yes
+ 
+ roles:
+ -common
+ 
+-name: apply the database configuration
+ hosts: dbservers
+ remote_user: vagrant
+ become: yes
+
+ roles:
+ -apache
+ -web
+-name: apply the LB configuration
+ hosts: webservers
+ remote_user: vagrant
+ become: yes 
+ 
+ roles:
+ -apache
+ -web
+ 
+ ansible-playbook -i hosts site.yml
+------------------------------------------------------------------------
+
+
+  

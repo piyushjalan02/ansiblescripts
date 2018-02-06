@@ -1,0 +1,33 @@
+sudo apt-get install python-pip
+
+sudo pip install ansible                  #The installation directory is /usr/local/bin.
+
+sudo apt-get install virtualbox           #Make sure virtualization is on in BIOS. 
+
+sudo apt-get install vagrant 
+
+mkdir playbook
+cd playbook
+vagrant init ubuntu/trusty64              #This will create a Vagrantfile in the directory.
+vagrant up                                #This will start downloading the machine.
+
+vagrant ssh
+vagrant ssh-config
+
+ssh vagrant@127.0.0.1 -p 2222 -i /usr/local/bin/playbooks/.vagrant/machines/default/virtualbox/private_key
+
+ansible ranosysansible -i hosts -m ping   #To check the Ping connection with hosts.
+
+ansible ranosysansible -a uptime          #To check uptime of machine.
+
+#After setting ansible.cfg we do not require to pass argument in command. Like:
+
+ansible ranosysansible -m ping
+
+ansible ranosysansible -a "tail /var/log/dmesg"
+ 
+ansible ranosysansible -s -a "tail /var/log/syslog" 
+
+ansible-playbook web-notls.yml
+
+

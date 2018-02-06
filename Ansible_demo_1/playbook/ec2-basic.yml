@@ -1,0 +1,24 @@
+- name: Stage instance(s)
+  hosts: local
+  connection: local
+  remote_user: root
+  gather_facts: false
+
+  vars:
+      keypair: Magento2
+      instance_type: t2.micro
+      security_group: ansible
+      image: ami-77af2010
+      region: ap-southeast-1
+      vpc_subnet_id: subnet-a6k97ekl
+
+  # Launch 1 instances with the following parameters.  Register the output.
+
+  tasks:
+    - name: Launch instance
+      ec2: aws_access_key=AKUIHTYVBGFTHGHJJGJJKHDGGDYUI
+           aws_secret_key=vYNKhdhjs6fhks8nhFhdjksllfj&dhjdkjd7
+           keypair={{keypair}} group={{security_group}} region={{ region }} 
+           instance_type={{instance_type}} image={{image}} vpc_subnet_id={{vpc_subnet_id}}
+           wait=true count=1 
+      register: ec2
